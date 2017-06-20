@@ -29,7 +29,7 @@ def error_mail(message):
 	server.starttls()
 	server.login(username,pwd)
 	text = msg.as_string()
-	server.sendmail('amazonwebscraping@10i.co.in', ['webscraping.errorreport@10i.co.in'], text)
+	server.sendmail('amazonwebscraping@10i.co.in', ['badal@10i.co.in','kishan@10i.co.in'], text)
 	server.quit()
 	sys.exit()
 
@@ -50,7 +50,7 @@ def xls_mail(file_name):
 	server.starttls()
 	server.login(username,pwd)
 	text = msg.as_string()
-	server.sendmail('amazonwebscraping@10i.co.in', ['amazon.webscraping.data@10i.co.in'], text)
+	server.sendmail('amazonwebscraping@10i.co.in', ['badal@10i.co.in','kishan@10i.co.in'], text)
 	server.quit()
 
 
@@ -70,8 +70,7 @@ else:
 names = book.sheet_names()
 
 try:
-	display = Display(visible=0, size=(800, 800))
-	display.start()
+	
 	driver = webdriver.Chrome()
 	driver.get('https://www.amazonbusiness.in/login?ref_=nb_si')
 	time.sleep(1)
@@ -138,8 +137,8 @@ for i in range(book.nsheets):
 			res = driver.find_elements_by_class_name('a-size-medium')
 			wsheet.write(x+1, 2, skuasin, style)
 		except Exception, e:
-			error_str = error_str + str(e)
-			error_mail(error_str)
+			error_str = error_str + "\n" + str(e) + "Row Number :" + str(x+1) + "\n"
+			#error_mail(error_str)
 		present = (len(res)==3)
 		if(present):
 			try:
@@ -152,8 +151,8 @@ for i in range(book.nsheets):
 				val = res[1].text
 				wsheet.write(x+1, 3, 'N/A', style)
 			except Exception, e:
-				error_str = error_str + str(e)
-				error_mail(error_str)
+				error_str = error_str + "\n" + str(e) + "Row Number :" + str(x+1) + "\n"
+				#error_mail(error_str)
 		else:
 			try:
 				wsheet.write(x+1, 5, res[2].text, style)
@@ -171,8 +170,8 @@ for i in range(book.nsheets):
 				res = driver.find_element_by_class_name('a-alert-content')
 				wsheet.write(x+1, 10, res.text, style)
 			except Exception, e:
-				error_str = error_str + str(e)
-				error_mail(error_str)
+				error_str = error_str + "\n" + str(e) + "Row Number :" + str(x+1) + "\n"
+				#error_mail(error_str)
 		res =  driver.find_elements_by_class_name('a-keyvalue')
 		res = res[0].text.split("\n")
 		try:
@@ -186,8 +185,8 @@ for i in range(book.nsheets):
 				wsheet.write(x+1, 8, 'N/A', style)
 				wsheet.write(x+1, 9, 'N/A', style)
 		except Exception, e:
-			error_str = error_str + str(e)
-			error_mail(error_str)
+			error_str = error_str + "\n" + str(e) + "Row Number :" + str(x+1) + "\n"
+			#error_mail(error_str)
 
 try:
 	filename = "Scraped_on_" + time.strftime('%d%m%Y')
@@ -197,46 +196,50 @@ try:
 except Exception, e:
 		error_str = error_str + str(e)
 		error_mail(error_str)
+if(len(error_str)==0):
+	book = xlrd.open_workbook(filename)
+	names = book.sheet_names()
+	json_list = []
+	for i in range(book.nsheets):
+		sheet = book.sheet_by_index(i)
+		sheet_length = sheet.nrows
+		for x in range(1, sheet_length):
+			row = sheet.row_values(x)
+			data = {
+				"dt" : time.strftime('%H:%M:%S').encode('ascii', 'ignore'),
+				"region" : "karnataka",
+				"name" : row[1].encode('ascii', 'ignore'),
+				"asin" : row[2].encode('ascii', 'ignore'),
+				"MRP" : row[3].encode('ascii', 'ignore'),
+				"PriceWithVAT" : row[4].encode('ascii', 'ignore'),
+				"PriceWithoutVAT" : row[5].encode('ascii', 'ignore'),
+				"Margin" : row[6].encode('ascii', 'ignore'),
+				"Availability" : row[7].encode('ascii', 'ignore'),
+				"ProductWt" : row[8].encode('ascii', 'ignore'),
+				"ShippingWt" : row[9].encode('ascii', 'ignore')
+			}	
+			json_list.append(data)
 
-book = xlrd.open_workbook(filename)
-names = book.sheet_names()
-json_list = []
-for i in range(book.nsheets):
-	sheet = book.sheet_by_index(i)
-	sheet_length = sheet.nrows
-	for x in range(1, sheet_length):
-		row = sheet.row_values(x)
-		data = {
-			"dt" : time.strftime('%H:%M:%S').encode('ascii', 'ignore'),
-			"region" : "karnataka",
-			"name" : row[1].encode('ascii', 'ignore'),
-			"asin" : row[2].encode('ascii', 'ignore'),
-			"MRP" : row[3].encode('ascii', 'ignore'),
-			"PriceWithVAT" : row[4].encode('ascii', 'ignore'),
-			"PriceWithoutVAT" : row[5].encode('ascii', 'ignore'),
-			"Margin" : row[6].encode('ascii', 'ignore'),
-			"Availability" : row[7].encode('ascii', 'ignore'),
-			"ProductWt" : row[8].encode('ascii', 'ignore'),
-			"ShippingWt" : row[9].encode('ascii', 'ignore')
-		}
-		json_list.append(data)
 
+	date = time.strftime("%Y%m%d")
 
-date = time.strftime("%Y%m%d")
+	try:
+		with open(date+'.json', 'w') as fp:
+			json.dump(json_list, fp)
 
-try:
-	with open(date+'.json', 'w') as fp:
-		json.dump(json_list, fp)
+		conn = boto.s3.connect_to_region('us-west-1')
+		bucket = conn.get_bucket('10i-webscraping')
+		k = Key(bucket)
+		UPLOADED_FILENAME = date+'.json'
+		k.key = UPLOADED_FILENAME
+		k.set_contents_from_filename(date+'.json')
+	except Exception, e:
+			error_str = error_str + str(e)
+			error_mail(error_str)
+else:
+	xls_mail(filename)
+	error_mail(error_str)
 
-	conn = boto.s3.connect_to_region('us-west-1')
-	bucket = conn.get_bucket('10i-webscraping')
-	k = Key(bucket)
-	UPLOADED_FILENAME = date+'.json'
-	k.key = UPLOADED_FILENAME
-	k.set_contents_from_filename(date+'.json')
-except Exception, e:
-		error_str = error_str + str(e)
-		error_mail(error_str)
 
 try:
 	xls_mail(filename)
