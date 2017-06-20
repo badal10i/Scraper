@@ -21,7 +21,7 @@ def error_mail(message):
 	pwd = '10iComm3rc3'
 	msg = MIMEMultipart()
 	msg['From'] = 'amazonwebscraping@10i.co.in'
-	msg['Subject'] = "ERROR while scraping amazon business website"
+	msg['Subject'] = "ERROR"
 	body = message
 	msg.attach(MIMEText(body, 'plain'))
 	server = smtplib.SMTP('smtp.gmail.com:587')
