@@ -29,7 +29,7 @@ def error_mail(message):
 	server.starttls()
 	server.login(username,pwd)
 	text = msg.as_string()
-	server.sendmail('badal@10i.co.in', ['webscraping.errorreport@10i.co.in'], text)
+	server.sendmail('amazonwebscraping@10i.co.in', ['webscraping.errorreport@10i.co.in'], text)
 	server.quit()
 	sys.exit()
 
@@ -50,7 +50,7 @@ def xls_mail(file_name):
 	server.starttls()
 	server.login(username,pwd)
 	text = msg.as_string()
-	server.sendmail('amazonwebscraping@10i.co.in', ['badal@10i.co.in','kishan@10i.co.in'], text)
+	server.sendmail('amazonwebscraping@10i.co.in', ['amazon.webscraping.data@10i.co.in'], text)
 	server.quit()
 
 
@@ -122,7 +122,7 @@ for i in range(book.nsheets):
 	wsheet.write(0, 9, 'Shipping Weight', style)
 	wsheet.write(0,10, 'Quantity', style)
 
-	for x in range(0, 6):
+	for x in range(0, sheet_length):
 		try:
 			skuasin = sheet.row_values(x)[0]
 			search = driver.find_element_by_name('keywords')
